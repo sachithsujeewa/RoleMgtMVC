@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoleMgtMVC", "RoleMgtMVC\RoleMgtMVC.csproj", "{E517432B-9E2B-4A62-82D1-160DA1EEDB3F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E517432B-9E2B-4A62-82D1-160DA1EEDB3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E517432B-9E2B-4A62-82D1-160DA1EEDB3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E517432B-9E2B-4A62-82D1-160DA1EEDB3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E517432B-9E2B-4A62-82D1-160DA1EEDB3F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6F88985D-0648-42DF-BDC7-64E486A15B95}
+	EndGlobalSection
+EndGlobal
