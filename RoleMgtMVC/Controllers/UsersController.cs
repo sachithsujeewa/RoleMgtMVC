@@ -68,12 +68,18 @@ namespace RoleMgtMVC.Controllers
             if (ModelState.IsValid)
             {
                 var userRole = await _context.UserRole.FirstOrDefaultAsync(s => s.Id == int.Parse(userModel.UserRoleId));
-                
 
+                var hashData = GetPasswordHashValue(userModel.Password);
                 var user = new User()
                 {
                     Email = userModel.Email,
-                    UserRole = userRole
+                    UserRole = userRole,
+                    Salt = hashData.Salt,
+                    PasswordHash = hashData.PasswordHash,
+                    FirstName = userModel.FirstName,
+                    LastName = userModel.LastName,
+                    CreatedDate = DateTime.Now,
+                    ExpireDate = DateTime.Now.AddMonths(3),
                 };
                 _context.Add(user);
                 await _context.SaveChangesAsync();
@@ -163,7 +169,7 @@ namespace RoleMgtMVC.Controllers
             return _context.User.Any(e => e.Id == id);
         }
 
-        private HashData GetHashValue(string password)
+        private HashData GetPasswordHashValue(string password)
         {
             byte[] salt = new byte[128 / 8];
 
