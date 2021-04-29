@@ -1,18 +1,18 @@
-﻿namespace RoleMgtMVC.Models
-{
-    public enum UserRoles
-    {
-        External = 0,
-        InternalEmployee =1,
-        ContractEmployee =2,
-        LeadEmployee = 3,
-        AdminEmployee = 4
-    }
+﻿using System;
 
+namespace RoleMgtMVC.Models
+{
     public class User
     {
         public int Id { get; set; }
         public string Email { get; set; }
-        public UserRoles UserRole { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Salt { get; set; }
+        public string PasswordHash { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime ExpireDate { get; set; }
+        public UserRole UserRole { get; set; }
     }
 }

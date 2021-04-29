@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
+using RoleMgtMVC.Data;
 
 namespace RoleMgtMVC
 {
@@ -18,6 +20,9 @@ namespace RoleMgtMVC
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            services.AddDbContext<RoleMgtMVCContext>(options =>
+                    options.UseSqlServer(Configuration.GetConnectionString("RoleMgtMVCContext")));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
