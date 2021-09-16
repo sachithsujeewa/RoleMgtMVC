@@ -31,21 +31,21 @@ namespace RoleMgtMVC.Controllers
         }
 
         // GET: Users/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<User> GetUser(string email)
         {
-            if (id == null)
+            if (email == null)
             {
-                return NotFound();
+                return null;
             }
 
             var user = await _context.User
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .FirstOrDefaultAsync(m => m.Email == email);
             if (user == null)
             {
-                return NotFound();
+                return null;
             }
 
-            return View(user);
+            return user;
         }
 
         // GET: Users/Create
@@ -169,7 +169,7 @@ namespace RoleMgtMVC.Controllers
             return _context.User.Any(e => e.Id == id);
         }
 
-        private HashData GetPasswordHashValue(string password)
+        public static HashData GetPasswordHashValue(string password)
         {
             byte[] salt = new byte[128 / 8];
 

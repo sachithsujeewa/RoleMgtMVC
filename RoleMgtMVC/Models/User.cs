@@ -14,5 +14,6 @@ namespace RoleMgtMVC.Models
         public DateTime CreatedDate { get; set; }
         public DateTime ExpireDate { get; set; }
         public UserRole UserRole { get; set; }
+        public int UserRoleId { get; set; }
     }
 }
