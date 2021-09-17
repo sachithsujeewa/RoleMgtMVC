@@ -10,8 +10,8 @@ using RoleMgtMVC.Data;
 namespace RoleMgtMVC.Migrations
 {
     [DbContext(typeof(RoleMgtMVCContext))]
-    [Migration("20210917051445_sessionkey")]
-    partial class sessionkey
+    [Migration("20210917075609_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -49,8 +49,8 @@ namespace RoleMgtMVC.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Salt")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<byte[]>("Salt")
+                        .HasColumnType("varbinary(max)");
 
                     b.Property<Guid>("SessionKey")
                         .HasColumnType("uniqueidentifier");
@@ -68,14 +68,14 @@ namespace RoleMgtMVC.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedDate = new DateTime(2021, 9, 17, 10, 44, 45, 113, DateTimeKind.Local).AddTicks(5372),
+                            CreatedDate = new DateTime(2021, 9, 17, 13, 26, 8, 951, DateTimeKind.Local).AddTicks(9352),
                             Email = "sachithsujeewa@gmail.com",
                             ExpireDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FirstName = "Sachith",
                             IsActive = true,
                             LastName = "Sujeewa",
-                            PasswordHash = "sBMA1VyuQgk6C6fPe2qpH27Qap/0AB+OYztQ6U3igcc=",
-                            Salt = "�pC7�'�)6������",
+                            PasswordHash = "T0znWEIGTQudqJKcFkOfOGxi9fNB3QG4A2B06GuzHeU=",
+                            Salt = new byte[] { 119, 46, 5, 112, 249, 169, 243, 117, 168, 167, 241, 125, 199, 138, 48, 65 },
                             SessionKey = new Guid("00000000-0000-0000-0000-000000000000"),
                             UserRoleId = 4
                         });

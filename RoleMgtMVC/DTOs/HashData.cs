@@ -8,6 +8,6 @@ namespace RoleMgtMVC.DTOs
     public class HashData
     {
         public string PasswordHash { get; set; }
-        public string Salt { get; set; }
+        public byte[] Salt { get; set; }
     }
 }

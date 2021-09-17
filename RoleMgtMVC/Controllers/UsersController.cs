@@ -17,7 +17,6 @@ namespace RoleMgtMVC.Controllers
     public class UsersController : Controller
     {
         private readonly RoleMgtMVCContext _context;
-        private User loggedUser;
 
         public UsersController(RoleMgtMVCContext context)
         {
@@ -228,14 +227,19 @@ namespace RoleMgtMVC.Controllers
             return _context.User.Any(e => e.Id == id);
         }
 
-        public static HashData GetPasswordHashValue(string password)
+        public static HashData GetPasswordHashValue(string password, byte[] salt = null)
         {
-            byte[] salt = new byte[128 / 8];
-
-            using (var rng = RandomNumberGenerator.Create())
+            if(salt == null)
             {
-                rng.GetBytes(salt);
+                salt = new byte[128 / 8];
+
+                using (var rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(salt);
+                }
+
             }
+
 
             var hash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
                 password: password,
@@ -247,7 +251,7 @@ namespace RoleMgtMVC.Controllers
             var hashData = new HashData()
             {
                 PasswordHash = hash,
-                Salt = Encoding.UTF8.GetString(salt)
+                Salt = salt
             };
 
             return hashData;
