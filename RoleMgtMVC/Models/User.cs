@@ -15,5 +15,6 @@ namespace RoleMgtMVC.Models
         public DateTime ExpireDate { get; set; }
         public UserRole UserRole { get; set; }
         public int UserRoleId { get; set; }
+        public Guid SessionKey { get; set; }
     }
 }

@@ -17,15 +17,44 @@ namespace RoleMgtMVC.Controllers
     public class UsersController : Controller
     {
         private readonly RoleMgtMVCContext _context;
+        private User loggedUser;
 
         public UsersController(RoleMgtMVCContext context)
         {
             _context = context;
         }
 
-        // GET: Users
-        public async Task<IActionResult> Index()
+        public async Task<bool> ValidateSession(int id, Guid guid)
         {
+            if (id == 0 || guid == Guid.Empty)
+            {
+                RedirectToAction("Index", "Home");
+                return false;
+            }
+
+            var user = await _context.User
+                .FirstOrDefaultAsync(m => m.Id == id);
+            
+            if (user == null)
+            {
+                return false;
+            }
+
+            if (user.SessionKey.Equals(guid))
+            {
+                return true;
+            }
+
+            return false;
+        }
+        // GET: Users
+        public async Task<IActionResult> Index(int userId, Guid session)
+        {
+            if(session == null || session == Guid.Empty || !await ValidateSession(userId,session))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
             var users = await _context.User.Include(u => u.UserRole).ToListAsync();
             return View(users);
         }
@@ -134,6 +163,36 @@ namespace RoleMgtMVC.Controllers
                 return RedirectToAction(nameof(Index));
             }
             return View(user);
+        }
+
+        public async Task<bool> UpdateUser(int id, User user)
+        {
+            if (id != user.Id)
+            {
+                return false;
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(user);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!UserExists(user.Id))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return true;
+            }
+            return false;
         }
 
         // GET: Users/Delete/5

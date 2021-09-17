@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RoleMgtMVC.Data;
 
 namespace RoleMgtMVC.Migrations
 {
     [DbContext(typeof(RoleMgtMVCContext))]
-    partial class RoleMgtMVCContextModelSnapshot : ModelSnapshot
+    [Migration("20210917051445_sessionkey")]
+    partial class sessionkey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

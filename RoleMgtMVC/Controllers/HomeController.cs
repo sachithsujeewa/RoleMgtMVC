@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RoleMgtMVC.Data;
 using RoleMgtMVC.Models;
+using System;
 using System.Threading.Tasks;
 
 namespace RoleMgtMVC.Controllers
@@ -31,9 +32,12 @@ namespace RoleMgtMVC.Controllers
                 ModelState.AddModelError("Username", "Incorrect User Name...!");
                 return View("Login", login);
             }
-            return RedirectToAction("Index","Users");
 
-            return await new UsersController(_context).Index();
+            //create new session key
+            user.SessionKey = Guid.NewGuid();
+            await usersController.UpdateUser(user.Id, user);
+
+            return RedirectToAction("Index","Users",new { UserId = user.Id,Session = user.SessionKey});
         }
     }
 }
