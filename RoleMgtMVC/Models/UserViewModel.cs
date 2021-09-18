@@ -11,6 +11,9 @@ namespace RoleMgtMVC.Models
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Password { get; set; }
+        public string UserRole { get; set; }
+        public bool IsActive { get; set; }
         public IList<SelectListItem> UserRoles { get; set; }
+        public IList<User> VisibleUsers { get; set; }
     }
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using RoleMgtMVC.Data;
 using RoleMgtMVC.Models;
 using System;
@@ -12,14 +14,16 @@ namespace RoleMgtMVC.Controllers
         private readonly RoleMgtMVCContext _context;
         private readonly UsersController usersController;
 
-        public HomeController(RoleMgtMVCContext context)
+        public HomeController(RoleMgtMVCContext context, IConfiguration configuration)
         {
             _context = context;
-            usersController = new UsersController(_context);
+            usersController = new UsersController(_context,configuration);
         }
 
         public IActionResult Index()
         {
+            HttpContext.Session.SetString("SessionKey", "");
+            HttpContext.Session.SetString("UserId", "");
             var login = new Login();
             return View("Login",login);
         }
@@ -38,11 +42,17 @@ namespace RoleMgtMVC.Controllers
                 return View("Login", login);
             }
 
-            var user  = await usersController.GetUser(login.Username);
+            var user  = await usersController.GetUserByEmail(login.Username);
 
             if(user == null)
             {
                 ModelState.AddModelError("Username", "Incorrect Username...!");
+                return View("Login", login);
+            }
+
+            if (user.IsActive == false)
+            {
+                ModelState.AddModelError("Username", "Username should be activated...!");
                 return View("Login", login);
             }
 
@@ -53,7 +63,10 @@ namespace RoleMgtMVC.Controllers
                 user.SessionKey = Guid.NewGuid();
                 await usersController.UpdateUser(user.Id, user);
 
-                return RedirectToAction("Index", "Users", new { UserId = user.Id, Session = user.SessionKey });
+                HttpContext.Session.SetString("SessionKey", user.SessionKey.ToString());
+                HttpContext.Session.SetString("UserId", user.Id.ToString());
+
+                return RedirectToAction("Index", "Users");
             }
             else
             {

@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using RoleMgtMVC.Data;
 using RoleMgtMVC.DTOs;
 using RoleMgtMVC.Models;
@@ -17,10 +21,12 @@ namespace RoleMgtMVC.Controllers
     public class UsersController : Controller
     {
         private readonly RoleMgtMVCContext _context;
+        public IConfiguration Configuration { get; }
 
-        public UsersController(RoleMgtMVCContext context)
+        public UsersController(RoleMgtMVCContext context, IConfiguration configuration)
         {
             _context = context;
+            Configuration = configuration;
         }
 
         public async Task<bool> ValidateSession(int id, Guid guid)
@@ -33,7 +39,7 @@ namespace RoleMgtMVC.Controllers
 
             var user = await _context.User
                 .FirstOrDefaultAsync(m => m.Id == id);
-            
+
             if (user == null)
             {
                 return false;
@@ -46,28 +52,138 @@ namespace RoleMgtMVC.Controllers
 
             return false;
         }
+
         // GET: Users
-        public async Task<IActionResult> Index(int userId, Guid session)
+        public async Task<IActionResult> Index()
         {
-            if(session == null || session == Guid.Empty || !await ValidateSession(userId,session))
+            var session = Guid.Empty;
+            var userId = 0;
+            if(HttpContext.Session.GetString("SessionKey") != "")
+            {
+                session = Guid.Parse(HttpContext.Session.GetString("SessionKey"));
+                userId = int.Parse(HttpContext.Session.GetString("UserId"));
+            }
+
+            if (session == null || session == Guid.Empty || !await ValidateSession(userId, session))
             {
                 return RedirectToAction("Index", "Home");
             }
 
+            var loggedUser = await GetUserBySession(session);
+
+            if (loggedUser == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            HttpContext.Session.SetString("SessionKey", loggedUser.SessionKey.ToString());
+            HttpContext.Session.SetString("UserId", loggedUser.Id.ToString());
+
             var users = await _context.User.Include(u => u.UserRole).ToListAsync();
-            return View(users);
+
+
+            users = users.OrderByDescending(s => s.UserRoleId).ToList();
+
+            if (loggedUser.UserRoleId < 4)
+            {
+                users = users.Where(u => u.UserRoleId < loggedUser.UserRoleId).ToList();
+            }
+
+            var userVM = new UserViewModel()
+            {
+                Id = loggedUser.Id,
+                Email = loggedUser.Email,
+                VisibleUsers = users,
+                UserRoleId = loggedUser.UserRoleId.ToString(),
+                FirstName = loggedUser.FirstName,
+                LastName = loggedUser.LastName,
+                UserRole = loggedUser.UserRole.Name
+            };
+
+            return View(userVM);
         }
 
-        // GET: Users/Details/5
-        public async Task<User> GetUser(string email)
+
+        public async Task<User> GetUserByEmail(string email)
         {
-            if (email == null)
+            // validate parameter is filled
+            if (email == null || email.Contains("\'") || email.Contains(";"))
             {
                 return null;
             }
 
+            // validate the email
+            SqlDataReader rdr = null;
+            SqlConnection con = new SqlConnection(Configuration.GetConnectionString("RoleMgtMVCContext"));
+            object t1, t2 = null;
+
+            try
+            {
+                string sql = "select [Email],[SessionKey]  from [User] where [Email]= @EmailID";
+                SqlCommand cmd = new SqlCommand(sql, con);
+                cmd.Parameters.Add(new SqlParameter("@EmailID", email));
+                con.Open();
+                rdr = cmd.ExecuteReader();
+                while (rdr.Read())
+                {
+                    t1 = rdr[0];
+                    t2 = rdr[1];
+                }
+            }
+            finally
+            {
+                if (rdr != null)
+                {
+                    rdr.Close();
+                }
+
+                if (con != null)
+                {
+                    con.Close();
+                }
+            }
+
+
+
             var user = await _context.User
                 .FirstOrDefaultAsync(m => m.Email == email);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return user;
+        }
+
+
+        public async Task<User> GetUserBySession(Guid sessionKey)
+        {
+            // validate parameter is filled
+            if (sessionKey == null || sessionKey == Guid.Empty)
+            {
+                return null;
+            }
+
+            // validate the session key
+            var user = await _context.User.Include(u => u.UserRole).FirstOrDefaultAsync(m => m.SessionKey.Equals(sessionKey));
+            if (user == null)
+            {
+                return null;
+            }
+
+            return user;
+        }
+
+        public async Task<User> GetUserById(int id)
+        {
+            // validate parameter is filled
+            if (id == 0)
+            {
+                return null;
+            }
+
+            // validate the email
+            var user = await _context.User
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (user == null)
             {
                 return null;
@@ -80,7 +196,8 @@ namespace RoleMgtMVC.Controllers
         public async Task<IActionResult> CreateAsync()
         {
             var user = new UserViewModel();
-            var roles = await _context.UserRole.ToListAsync();
+            var loggedUser = await GetUserBySession(Guid.Parse(HttpContext.Session.GetString("SessionKey")));
+            var roles = await _context.UserRole.Where(r => r.Level < loggedUser.UserRole.Level).ToListAsync();
             user.UserRoles = roles.Select(s => new SelectListItem()
             {
                 Value = s.Id.ToString(),
@@ -107,8 +224,17 @@ namespace RoleMgtMVC.Controllers
                     FirstName = userModel.FirstName,
                     LastName = userModel.LastName,
                     CreatedDate = DateTime.Now,
-                    ExpireDate = DateTime.Now.AddMonths(3),
                 };
+
+                if (user.UserRoleId == 1)
+                {
+                    user.ExpireDate = DateTime.Now.AddMonths(3);
+                }
+                else
+                {
+                    user.ExpireDate = DateTime.Now.AddYears(1);
+                    user.IsActive = true;
+                }
                 _context.Add(user);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -124,27 +250,65 @@ namespace RoleMgtMVC.Controllers
                 return NotFound();
             }
 
-            var user = await _context.User.FindAsync(id);
+            var user = await _context.User.Include(u => u.UserRole).FirstOrDefaultAsync(t => t.Id == id);
             if (user == null)
             {
                 return NotFound();
             }
-            return View(user);
+
+            var userVM = new UserViewModel()
+            {
+                Id = user.Id,
+                Email = user.Email,
+                UserRoleId = user.UserRoleId.ToString(),
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                UserRole = user.UserRole.Name,
+                IsActive = user.IsActive
+            };
+            var loggedUser = await GetUserBySession(Guid.Parse(HttpContext.Session.GetString("SessionKey")));
+            var roles = await _context.UserRole.Where(r => r.Level < loggedUser.UserRole.Level).ToListAsync();
+            userVM.UserRoles = roles.Select(s => new SelectListItem()
+            {
+                Value = s.Id.ToString(),
+                Text = s.Name
+            }).ToList();
+            return View(userVM);
         }
 
         // POST: Users/Edit/5
         [HttpPost]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Email")] User user)
+        public async Task<IActionResult> Edit(int id,UserViewModel userVM)
         {
-            if (id != user.Id)
+            if (id != userVM.Id)
             {
                 return NotFound();
             }
 
+            User user = null;
             if (ModelState.IsValid)
             {
                 try
                 {
+                    user = await _context.User.Include(u => u.UserRole).FirstOrDefaultAsync(t => t.Id == id);
+
+                    user.CreatedDate = DateTime.Now;
+                    user.Email = userVM.Email;
+                    user.UserRoleId = int.Parse(userVM.UserRoleId);
+                    user.FirstName = userVM.FirstName;
+                    user.LastName = userVM.LastName;
+                    user.IsActive = userVM.IsActive;
+                    
+                    if(user.UserRoleId == 1)
+                    {
+                        user.ExpireDate = DateTime.Now.AddMonths(3);
+                    }
+                    else
+                    {
+                        user.ExpireDate = DateTime.Now.AddYears(1);
+                    }
+                    
+
                     _context.Update(user);
                     await _context.SaveChangesAsync();
                 }
@@ -202,14 +366,29 @@ namespace RoleMgtMVC.Controllers
                 return NotFound();
             }
 
-            var user = await _context.User
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await _context.User.Include(u => u.UserRole).FirstOrDefaultAsync(t => t.Id == id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            return View(user);
+            var userVM = new UserViewModel()
+            {
+                Id = user.Id,
+                Email = user.Email,
+                UserRoleId = user.UserRoleId.ToString(),
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                UserRole = user.UserRole.Name,
+                IsActive = user.IsActive
+            };
+            var roles = await _context.UserRole.ToListAsync();
+            userVM.UserRoles = roles.Select(s => new SelectListItem()
+            {
+                Value = s.Id.ToString(),
+                Text = s.Name
+            }).ToList();
+            return View(userVM);
         }
 
         // POST: Users/Delete/5
@@ -229,7 +408,7 @@ namespace RoleMgtMVC.Controllers
 
         public static HashData GetPasswordHashValue(string password, byte[] salt = null)
         {
-            if(salt == null)
+            if (salt == null)
             {
                 salt = new byte[128 / 8];
 

@@ -20,7 +20,7 @@ namespace RoleMgtMVC
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
-
+            services.AddSession();
             services.AddDbContext<RoleMgtMVCContext>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("RoleMgtMVCContext")));
         }
@@ -35,11 +35,12 @@ namespace RoleMgtMVC
             {
                 app.UseExceptionHandler("/Home/Error");
             }
-
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseRouting();
+            app.UseSession();
+
 
             app.UseEndpoints(endpoints =>
             {

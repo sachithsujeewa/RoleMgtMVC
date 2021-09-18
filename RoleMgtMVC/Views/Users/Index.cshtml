@@ -1,4 +1,5 @@
-﻿@model IEnumerable<RoleMgtMVC.Models.User>
+﻿@using Microsoft.AspNetCore.Http;
+@model RoleMgtMVC.Models.UserViewModel
 
 @{
     Layout = null;
@@ -13,38 +14,65 @@
     <title>Index</title>
 </head>
 <body style="margin:50px">
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Email)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UserRole)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Email)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UserRole.Name)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+
+    @if (@Context.Session.GetString("SessionKey") != "")
+    {
+        <h3> @Model.UserRole Member Dashboard</h3>
+
+        <h4 style="float: right; position:relative; z-index:5;">
+            <a asp-controller="Home" asp-action="Index">Sign out</a>
+        </h4>
+
+    }
+    else
+    {
+        <h4 style="float: right; position:relative; z-index:5;">
+            <a asp-controller="Home" asp-action="Index">Sign in</a>
+        </h4>
+    }
+
+    @if (Model.UserRoleId != "1")
+    {
+        <p>
+            <a asp-action="Create">Create New</a>
+        </p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Email)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.UserRole)
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.VisibleUsers)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Email)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.UserRole.Name)
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                            <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <h5> Wait for a company updates... they will contact you soon...</h5>
+    }
+
+
+
 </body>
 </html>
